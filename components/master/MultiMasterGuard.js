@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Lock, Eye, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export function getMasterSessionId() {
-  if (typeof window === 'undefined') return 'session-server';
+  if (typeof window === 'undefined') return '';
   let sid = sessionStorage.getItem('master_session_id');
   if (!sid) {
     sid = `master-session-${Math.random().toString(36).substring(2, 9)}`;

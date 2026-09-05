@@ -24,10 +24,12 @@ export default function MasterDashboardPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState('veh-22');
   const [verifyModalVehicle, setVerifyModalVehicle] = useState(null);
   const [hazardModalVehicle, setHazardModalVehicle] = useState(null);
+  const [sessionId, setSessionId] = useState('');
 
-  // Set active master session ID on mount
+  // Set active master session ID on mount (client side only)
   useEffect(() => {
     const sid = getMasterSessionId();
+    setSessionId(sid);
     if (!crossing.activeMasterSessionId) {
       setCrossing((prev) => ({ ...prev, activeMasterSessionId: sid }));
     }
@@ -178,9 +180,10 @@ export default function MasterDashboardPage() {
   return (
     <MultiMasterGuard
       activeMasterSessionId={crossing.activeMasterSessionId}
-      onClaimMasterRole={(sessionId) =>
-        setCrossing((prev) => ({ ...prev, activeMasterSessionId: sessionId }))
-      }
+      onClaimMasterRole={(sid) => {
+        setCrossing((prev) => ({ ...prev, activeMasterSessionId: sid }));
+        setSessionId(sid);
+      }}
     >
       {({ isViewOnly }) => (
         <div className="min-h-screen bg-slate-950 flex flex-col font-sans w-full">
@@ -197,7 +200,12 @@ export default function MasterDashboardPage() {
           {/* Quick Action Toolbar */}
           <div className="bg-slate-900/60 border-b border-slate-800 px-6 py-2 flex items-center justify-between text-xs w-full">
             <div className="flex items-center gap-2 text-slate-400 font-medium">
-              <span>ACTIVE SESSION: <strong className="text-slate-200">{getMasterSessionId()}</strong></span>
+              <span>
+                ACTIVE SESSION:{' '}
+                <strong className="text-slate-200" suppressHydrationWarning>
+                  {sessionId || 'initializing...'}
+                </strong>
+              </span>
               {isViewOnly ? (
                 <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold border border-amber-500/30">
                   VIEW ONLY
@@ -218,7 +226,7 @@ export default function MasterDashboardPage() {
             </button>
           </div>
 
-          {/* Main Control Surface Grid Layout (Full Screen Width Adaptation) */}
+          {/* Main Control Surface Grid Layout */}
           <main className="flex-1 w-full p-4 md:p-6 space-y-6">
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
