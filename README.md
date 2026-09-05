@@ -9,11 +9,56 @@ A real-time, offline-resilient, weight-balanced boarding control surface for rur
 1. **Whole-Deck Primary Control Surface (`/master`)**: A 3-bay visual deck layout (LEFT, CENTER, RIGHT) displaying live weight totals, capacity progress meters, and left/right imbalance spread gauges.
 2. **Explainable Rationale Engine (`safety/suggestPlacement.js`)**: Evaluates all 3 deck bays simultaneously and explains *why* a placement is recommended or rejected (e.g., `✓ Fits capacity`, `✓ Keeps left/right spread within 1,000 kg`, `⚠ LEFT worsens balance`, `✕ RIGHT exceeds bay limit`).
 3. **Pure JavaScript Safety Engine (`safety/validateDeck.js`)**: Isolated, testable safety module enforcing hard capacity limits, bay thresholds, maximum imbalance bounds (1,000 kg), hazardous cargo confirmation, and weight trust precedence (`verifiedWeight ?? declaredWeight`).
-4. **Driver Self Check-In (`/driver`)**: Mobile check-in interface generating unique check-in codes (e.g. `FERRY-7K42`), ticket cards, wait time estimates, and duplicate submission debouncing.
+4. **Driver Self Check-In (`/driver`)**: Mobile check-in interface generating unique check-in codes (e.g. `FERRY-7K42`), ticket cards, wait time estimates, and duplicate submission debouncing (`[ CHECKING IN... ]`).
 5. **Dynamic Queue Ranking (`utils/queueSorting.js`)**: Emergency vehicles (Ambulance) receive queue priority, but do NOT bypass safety limits. Queue positions update dynamically based on live deck changes.
 6. **Public Queue Board (`/queue`)**: Terminal board for public display showing active deck load capacity and departure countdown.
 7. **Offline Resilience & Cast Off Protection**: Multi-tab Firestore persistence with real-time `onSnapshot` sync. Cast Off is strictly disabled during offline/stale state.
 8. **Multi-Master Lock (`components/master/MultiMasterGuard.js`)**: Restricts secondary master sessions to `VIEW ONLY` mode to prevent conflicting deck operations across devices.
+
+---
+
+## 🌿 Git Branching Strategy & Development History
+
+This project was built following a strict production-grade Git branching workflow. Each step of development was isolated in a dedicated feature branch, verified via unit/integration tests, merged into `dev` for staging integration, and finally merged into `main` for release.
+
+```text
+  main (Production Baseline) ────────────────────────────────────────────────────────────► v1.0.0 Release
+    │                                                                                       ▲
+    ├─► dev (Staging Integration) ───► Merge Step 1 ──► Merge Step 2 ──► Merge Steps 3-7 ───┤
+    │                                     ▲                 ▲                 ▲
+    ├─► feat/step-1-foundation ───────────┘                 │                 │
+    ├─► feat/step-2-safety-engine ──────────────────────────┘                 │
+    ├─► feat/step-3-master-deck ──────────────────────────────────────────────┤
+    ├─► feat/step-4-driver-queue ─────────────────────────────────────────────┤
+    └─► feat/step-5-6-7-release ──────────────────────────────────────────────┘
+```
+
+### Feature Branch Progression Breakdown
+
+| Branch Name | Primary Scope & Deliverables | Verification / Test Outcome |
+|---|---|---|
+| **`main`** | Production baseline branch containing stable, release-ready code. | Builds cleanly (`npm run build`). |
+| **`dev`** | Integration and staging branch where feature branches are merged. | Verified full system integration. |
+| **`feat/step-1-foundation`** | Initialized Next.js 14 App Router project, Tailwind CSS, Firebase SDK, constants, mock seed data, `flow.md`, and `decisions.md`. | Verified directory structure & schema keys. |
+| **`feat/step-2-safety-engine`** | Implemented pure JS safety engine (`validateDeck.js`, `suggestPlacement.js`) and executable test suite (`safetyEngine.test.js`). | **15/15 Automated Unit Tests Passing**. |
+| **`feat/step-3-master-deck`** | Built 3-bay whole-deck control surface (`/master`), weight gauges, queue panel, 3-bay rationale engine, weight verify modal, and hazard confirmation modal. | Interactive UI deck & recommendation testing. |
+| **`feat/step-4-driver-queue`** | Built Driver Self Check-In (`/driver`) with duplicate submission protection, ticket card generation, dynamic queue ranking (`queueSorting.js`), and Public Terminal Board (`/queue`). | Dynamic queue position calculation verified. |
+| **`feat/step-5-6-7-release`** | Connected Firestore real-time listeners (`lib/sync.js`, `lib/queue.js`), multi-tab offline persistence (`lib/offline.js`), pre-departure checklist, offline Cast Off block guard (`CastOffButton.js`), multi-master session lock (`MultiMasterGuard.js`), and documentation. | Offline mode & multi-master view-only guard verified. |
+
+### How to Inspect Branch History Locally
+
+You can inspect the branch structure and commit history using standard Git commands:
+
+```bash
+# List all local and remote branches
+git branch -a
+
+# View graph visualization of commit progression
+git log --graph --oneline --all
+
+# Checkout any specific feature branch to inspect historical state
+git checkout feat/step-2-safety-engine
+```
 
 ---
 
