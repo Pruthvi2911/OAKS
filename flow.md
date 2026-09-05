@@ -52,27 +52,37 @@ This document tracks the operational workflows, system architecture pipelines, s
    [ LOADED ] ────────► Verified on Deck (Master can verify weight / hazard)
         │
         ▼
-   [ COMPLETED ] ─────► Ferry Casts Off (Crossing Completed)
+   [ COMPLETED ] ─────► Ferry Casts Off (Crossing Completed, Next Run Promoted)
 ```
 
 ---
 
-## 3. Master Control Surface Flow (`app/master/page.js`)
+## 3. Master Control Surface & Guard Flow (`app/master/page.js`)
 
 ```text
-               ┌────────────────────────────────┐
-               │    MasterHeader Component      │
-               │ (Crossing ID, Deck Gauges)     │
-               └───────────────┬────────────────┘
-                               │
-       ┌───────────────────────┼───────────────────────┐
-       ▼                       ▼                       ▼
-  QueuePanel               FerryDeck           RecommendationPanel
- (Waiting Queue &        (3-Bay Deck View:      (Rationale Breakdown:
- Emergency Priority)   LEFT, CENTER, RIGHT)     ✓ Fits capacity,
-                                                ✓ Reduces imbalance,
-                                                ⚠ LEFT worsens,
-                                                ✕ RIGHT exceeds)
+                        ┌─────────────────────────────────┐
+                        │       MultiMasterGuard          │
+                        │ (Session Lock & View Only Mode) │
+                        └────────────────┬────────────────┘
+                                         │
+                        ┌────────────────┴────────────────┐
+                        │     MasterHeader Component      │
+                        │ (Crossing ID, Deck Weight Bar)  │
+                        └────────────────┬────────────────┘
+                                         │
+       ┌─────────────────────────────────┼─────────────────────────────────┐
+       ▼                                 ▼                                 ▼
+  QueuePanel                         FerryDeck                     RecommendationPanel
+ (Waiting Queue &                  (3-Bay Deck Surface:             (Rationale Breakdown:
+ Emergency Priority)             LEFT, CENTER, RIGHT)               ✓ Fits capacity,
+                                                                    ✓ Reduces imbalance,
+                                                                    ⚠ LEFT worsens,
+                                                                    ✕ RIGHT exceeds)
+                                         │
+                                         ▼
+                                  CastOffButton
+                        (Pre-departure Safety Checklist
+                         & Offline Block Guard)
 ```
 
 ---
@@ -83,6 +93,6 @@ This document tracks the operational workflows, system architecture pipelines, s
 - **Step 2: Pure Safety Engine & Test Suite** — Completed (`safety/validateDeck.js`, `safety/suggestPlacement.js`, `safety/__tests__/safetyEngine.test.js` - 15/15 tests passing).
 - **Step 3: Master Control Surface (`/master`)** — Completed (`app/master/page.js`, `MasterHeader.js`, `FerryDeck.js`, `QueuePanel.js`, `RecommendationPanel.js`, `WeightVerifyModal.js`, `HazardModal.js`).
 - **Step 4: Driver & Queue Views (`/driver`, `/queue`)** — Completed (`app/driver/page.js`, `TicketCard.js`, `app/queue/page.js`, `utils/queueSorting.js`).
-- **Step 5: Firestore & Realtime Listeners** — In Progress (Next).
-- **Step 6: Offline Resilience & Multi-Master Guard** — Pending execution.
-- **Step 7: Final Polish & Release** — Pending execution.
+- **Step 5: Firestore & Realtime Synchronization** — Completed (`lib/queue.js`, `lib/sync.js`, multi-tab offline persistence enabled).
+- **Step 6: Offline Resilience & Multi-Master Guard** — Completed (`lib/offline.js`, `MultiMasterGuard.js`, `CastOffButton.js` offline block & pre-departure checklist).
+- **Step 7: Final Release Package** — Completed (`npm run build` passing, main/dev git branches synced).
