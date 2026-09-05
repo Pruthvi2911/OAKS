@@ -14,6 +14,14 @@ export function getEffectiveWeight(vehicle) {
 /**
  * Evaluates placing ONE vehicle into ONE specific bay on the ferry deck.
  *
+ * Separation of Hard Constraints vs Recommendation Warnings (Spec Section 11):
+ * - HARD CONSTRAINTS (valid = false):
+ *   1. Total deck capacity exceeded (totalWeight > maxWeight)
+ *   2. Target bay weight limit exceeded (bayWeight > maxBayWeight)
+ * - RECOMMENDATION / PREFERENCE WARNINGS (valid = true, but flagged with warning):
+ *   1. Left/Right imbalance spread (postImbalance > maxImbalance)
+ *      This allows master to stage vehicles across LEFT & RIGHT bays without false blocks.
+ *
  * @param {Object} vehicle - Vehicle object to place
  * @param {String} bay - Target bay ('LEFT', 'CENTER', 'RIGHT')
  * @param {Array} currentVehicles - Array of vehicles currently assigned to deck bays
@@ -37,16 +45,14 @@ export function evaluatePlacement(
     };
   }
 
-  // Calculate effective weight of candidate vehicle
   const candidateWeight = getEffectiveWeight(vehicle);
 
-  // Compute current deck weights per bay (excluding candidate if already in array to avoid double counting)
+  // Compute current deck weights per bay
   let leftWeight = 0;
   let centerWeight = 0;
   let rightWeight = 0;
 
   for (const v of currentVehicles) {
-    // Only count vehicles currently placed in a bay (status BOARDING or LOADED, or with valid bay assignment)
     if (!v.bay || (v.id && vehicle.id && v.id === vehicle.id)) continue;
     const w = getEffectiveWeight(v);
     if (v.bay === BAYS.LEFT) leftWeight += w;
@@ -54,7 +60,6 @@ export function evaluatePlacement(
     else if (v.bay === BAYS.RIGHT) rightWeight += w;
   }
 
-  // Calculate pre-placement left/right imbalance spread
   const preImbalance = Math.abs(leftWeight - rightWeight);
 
   // Apply candidate vehicle to target bay
@@ -65,7 +70,7 @@ export function evaluatePlacement(
   const totalWeight = leftWeight + centerWeight + rightWeight;
   const postImbalance = Math.abs(leftWeight - rightWeight);
 
-  // Check Hard Safety Constraints
+  // Hard Safety Constraints (Block placement)
   let valid = true;
 
   if (totalWeight > config.maxWeight) {
@@ -88,20 +93,17 @@ export function evaluatePlacement(
     reasons.push(SAFETY_REASONS.RIGHT_BAY_OVER_LIMIT);
   }
 
-  if (postImbalance > config.maxImbalance) {
-    valid = false;
-    reasons.push(SAFETY_REASONS.IMBALANCE_TOO_HIGH);
-  }
-
   // Hazardous cargo check
   if (vehicle.hazardous && !vehicle.hazardConfirmed) {
     reasons.push(SAFETY_REASONS.HAZARD_REQUIRES_CONFIRMATION);
   }
 
-  // If valid, populate positive indicators for UI explanation
+  // Soft Recommendation Flags (Preference / Balance Quality)
   if (valid) {
     reasons.push(SAFETY_REASONS.FITS_CAPACITY);
-    if (postImbalance <= preImbalance) {
+    if (postImbalance > config.maxImbalance) {
+      reasons.push(SAFETY_REASONS.IMBALANCE_TOO_HIGH); // Soft warning for rationale, does not hard-block valid placement
+    } else if (postImbalance <= preImbalance) {
       reasons.push(SAFETY_REASONS.REDUCES_IMBALANCE);
     }
   }

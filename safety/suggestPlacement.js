@@ -34,16 +34,24 @@ export function suggestPlacement(
 
   // Create human-readable rationale explanations for UI presentation
   const rationale = {};
+  const maxImbalance = ferryConfig?.maxImbalance || 1000;
+
   for (const bay of BAY_LIST) {
     const res = options[bay];
     const lines = [];
 
     if (res.valid) {
       lines.push({ type: 'success', text: `${getWeightFormatted(vehicle)} fits remaining capacity` });
-      if (bay === bestBay) {
-        lines.push({ type: 'success', text: `Keeps left/right spread to ${res.postPlacementState.imbalance} kg (Best Balance)` });
+      const imb = res.postPlacementState.imbalance;
+      
+      if (imb <= maxImbalance) {
+        if (bay === bestBay) {
+          lines.push({ type: 'success', text: `Keeps left/right spread to ${imb} kg (Best Balance)` });
+        } else {
+          lines.push({ type: 'success', text: `Left/right spread would be ${imb} kg` });
+        }
       } else {
-        lines.push({ type: 'warning', text: `Imbalance spread would be ${res.postPlacementState.imbalance} kg` });
+        lines.push({ type: 'warning', text: `⚠ Increases left/right spread to ${imb} kg (Worsens balance)` });
       }
     } else {
       if (res.reasons.includes('TOTAL_CAPACITY_EXCEEDED')) {
@@ -51,9 +59,6 @@ export function suggestPlacement(
       }
       if (res.reasons.includes(`${bay}_BAY_OVER_LIMIT`)) {
         lines.push({ type: 'error', text: `${bay} bay weight limit exceeded` });
-      }
-      if (res.reasons.includes('IMBALANCE_TOO_HIGH')) {
-        lines.push({ type: 'error', text: `Exceeds max allowed imbalance threshold (${ferryConfig.maxImbalance || 1000} kg)` });
       }
     }
 

@@ -99,8 +99,8 @@ export default function FerryDeck({
                   ></div>
                 </div>
 
-                {/* Vehicles List in Bay (with overflow-x-hidden) */}
-                <div className="space-y-2.5 min-h-[220px] max-h-[380px] overflow-y-auto overflow-x-hidden pr-1">
+                {/* Vehicles List in Bay */}
+                <div className="space-y-3 min-h-[220px] max-h-[380px] overflow-y-auto overflow-x-hidden pr-1">
                   {bayVehicles.length === 0 ? (
                     <div className="h-44 border-2 border-dashed border-slate-800 rounded-lg flex flex-col items-center justify-center text-slate-500 text-xs gap-1">
                       <span>EMPTY BAY</span>
@@ -116,13 +116,13 @@ export default function FerryDeck({
                         <div
                           key={veh.id}
                           onClick={() => onSelectDeckVehicle && onSelectDeckVehicle(veh)}
-                          className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between min-w-0 ${
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-w-0 ${
                             isSelected
                               ? 'bg-slate-700 border-sky-400 ring-1 ring-sky-400/50'
                               : 'bg-slate-800/90 border-slate-700 hover:border-slate-600'
                           }`}
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex items-center gap-3 w-full">
                             <span className="text-2xl shrink-0">{typeMeta.icon}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -142,34 +142,33 @@ export default function FerryDeck({
                                 )}
                               </div>
 
-                              {/* Stacked Verified Badge under weight */}
-                              <div className="text-xs text-slate-300 mt-0.5">
-                                <div className="font-medium">{effWeight.toLocaleString()} kg</div>
-                                <div className="mt-0.5">
-                                  {veh.verifiedWeight ? (
-                                    <span className="text-emerald-400 font-semibold block text-[10px]">
-                                      ✓ Verified
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400 italic block text-[10px]">
-                                      (Declared)
-                                    </span>
-                                  )}
-                                </div>
+                              <div className="text-xs text-slate-300 mt-1 flex items-center justify-between">
+                                <span className="font-bold text-white">{effWeight.toLocaleString()} kg</span>
+                                {veh.verifiedWeight ? (
+                                  <span className="text-emerald-400 font-semibold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                                    ✓ Verified
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 italic text-[10px] bg-slate-700/50 px-1.5 py-0.5 rounded">
+                                    (Declared)
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
 
+                          {/* Prominent Full-Width Red Unload Button */}
                           {!isViewOnly && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onUnloadVehicle && onUnloadVehicle(veh.id);
                               }}
-                              title="Unload from deck"
-                              className="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors shrink-0 ml-2"
+                              title="Unload vehicle from deck"
+                              className="mt-3 w-full py-1.5 px-3 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Unload Vehicle
                             </button>
                           )}
                         </div>
