@@ -18,8 +18,8 @@ export default function MasterHeader({
   const isImbalanced = imbalance > maxImbalance;
 
   return (
-    <header className="bg-slate-800 border-b border-slate-700 p-4 shadow-lg sticky top-0 z-20">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="bg-slate-800 border-b border-slate-700 p-4 shadow-lg sticky top-0 z-20 w-full">
+      <div className="w-full px-2 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4">
         
         {/* Title & Crossing Metadata */}
         <div className="flex items-center gap-3 w-full md:w-auto">

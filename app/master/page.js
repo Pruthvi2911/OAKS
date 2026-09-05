@@ -13,7 +13,7 @@ import WeightVerifyModal from '../../components/master/WeightVerifyModal.js';
 import HazardModal from '../../components/master/HazardModal.js';
 import MultiMasterGuard, { getMasterSessionId } from '../../components/master/MultiMasterGuard.js';
 import CastOffButton from '../../components/master/CastOffButton.js';
-import { RefreshCw, Database } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 export default function MasterDashboardPage() {
   const connectionState = useConnectionStatus();
@@ -183,7 +183,7 @@ export default function MasterDashboardPage() {
       }
     >
       {({ isViewOnly }) => (
-        <div className="min-h-screen bg-slate-950 flex flex-col font-sans">
+        <div className="min-h-screen bg-slate-950 flex flex-col font-sans w-full">
           
           {/* Master Top Header */}
           <MasterHeader
@@ -195,7 +195,7 @@ export default function MasterDashboardPage() {
           />
 
           {/* Quick Action Toolbar */}
-          <div className="bg-slate-900/60 border-b border-slate-800 px-6 py-2 flex items-center justify-between text-xs">
+          <div className="bg-slate-900/60 border-b border-slate-800 px-6 py-2 flex items-center justify-between text-xs w-full">
             <div className="flex items-center gap-2 text-slate-400 font-medium">
               <span>ACTIVE SESSION: <strong className="text-slate-200">{getMasterSessionId()}</strong></span>
               {isViewOnly ? (
@@ -218,12 +218,12 @@ export default function MasterDashboardPage() {
             </button>
           </div>
 
-          {/* Main Control Surface Grid Layout */}
-          <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+          {/* Main Control Surface Grid Layout (Full Screen Width Adaptation) */}
+          <main className="flex-1 w-full p-4 md:p-6 space-y-6">
             
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
               {/* Left Column: Waiting Queue (3/12 cols) */}
-              <section className="lg:col-span-3 h-full">
+              <section className="lg:col-span-3 h-full w-full">
                 <QueuePanel
                   queueVehicles={waitingVehicles}
                   selectedVehicleId={selectedVehicleId}
@@ -234,7 +234,7 @@ export default function MasterDashboardPage() {
               </section>
 
               {/* Center Column: Ferry Deck Surface (5/12 cols) */}
-              <section className="lg:col-span-5 h-full">
+              <section className="lg:col-span-5 h-full w-full">
                 <FerryDeck
                   loadedVehicles={loadedVehicles}
                   ferryConfig={ferryConfig}
@@ -246,7 +246,7 @@ export default function MasterDashboardPage() {
               </section>
 
               {/* Right Column: Safety Engine Recommendation Panel (4/12 cols) */}
-              <section className="lg:col-span-4 h-full">
+              <section className="lg:col-span-4 h-full w-full">
                 <RecommendationPanel
                   selectedVehicle={selectedVehicle}
                   loadedVehicles={loadedVehicles}
@@ -260,7 +260,7 @@ export default function MasterDashboardPage() {
             </div>
 
             {/* Bottom Pre-Departure Cast Off Section */}
-            <section className="max-w-7xl mx-auto">
+            <section className="w-full">
               <CastOffButton
                 totalWeight={totalWeight}
                 imbalance={imbalance}

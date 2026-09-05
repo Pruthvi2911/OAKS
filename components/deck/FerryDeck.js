@@ -3,7 +3,7 @@
 import React from 'react';
 import { BAYS, VEHICLE_TYPES } from '../../lib/constants.js';
 import { getEffectiveWeight } from '../../safety/validateDeck.js';
-import { AlertCircle, Trash2, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Trash2, ShieldAlert } from 'lucide-react';
 
 export default function FerryDeck({
   loadedVehicles = [],
@@ -28,7 +28,7 @@ export default function FerryDeck({
   };
 
   return (
-    <div className="bg-slate-800/80 rounded-2xl border border-slate-700 p-5 shadow-xl flex flex-col h-full">
+    <div className="bg-slate-800/80 rounded-2xl border border-slate-700 p-5 shadow-xl flex flex-col h-full w-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -99,8 +99,8 @@ export default function FerryDeck({
                   ></div>
                 </div>
 
-                {/* Vehicles List in Bay */}
-                <div className="space-y-2.5 min-h-[220px] max-h-[380px] overflow-y-auto pr-1">
+                {/* Vehicles List in Bay (with overflow-x-hidden) */}
+                <div className="space-y-2.5 min-h-[220px] max-h-[380px] overflow-y-auto overflow-x-hidden pr-1">
                   {bayVehicles.length === 0 ? (
                     <div className="h-44 border-2 border-dashed border-slate-800 rounded-lg flex flex-col items-center justify-center text-slate-500 text-xs gap-1">
                       <span>EMPTY BAY</span>
@@ -116,42 +116,46 @@ export default function FerryDeck({
                         <div
                           key={veh.id}
                           onClick={() => onSelectDeckVehicle && onSelectDeckVehicle(veh)}
-                          className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between ${
+                          className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between min-w-0 ${
                             isSelected
                               ? 'bg-slate-700 border-sky-400 ring-1 ring-sky-400/50'
                               : 'bg-slate-800/90 border-slate-700 hover:border-slate-600'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{typeMeta.icon}</span>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-sm text-white">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <span className="text-2xl shrink-0">{typeMeta.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-sm text-white truncate">
                                   #{veh.checkInCode?.replace('FERRY-', '') || veh.id}
                                 </span>
                                 {veh.priority === 'EMERGENCY' && (
-                                  <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-bold px-1.5 py-0.2 rounded">
+                                  <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0">
                                     PRIORITY
                                   </span>
                                 )}
                                 {veh.hazardous && (
-                                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.2 rounded flex items-center gap-0.5">
+                                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.2 rounded flex items-center gap-0.5 shrink-0">
                                     <ShieldAlert className="w-2.5 h-2.5" />
                                     HAZARD
                                   </span>
                                 )}
                               </div>
+
+                              {/* Stacked Verified Badge under weight */}
                               <div className="text-xs text-slate-300 mt-0.5">
-                                {effWeight.toLocaleString()} kg
-                                {veh.verifiedWeight ? (
-                                  <span className="text-emerald-400 font-semibold ml-1.5">
-                                    ✓ Verified
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 italic ml-1.5">
-                                    (Declared)
-                                  </span>
-                                )}
+                                <div className="font-medium">{effWeight.toLocaleString()} kg</div>
+                                <div className="mt-0.5">
+                                  {veh.verifiedWeight ? (
+                                    <span className="text-emerald-400 font-semibold block text-[10px]">
+                                      ✓ Verified
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 italic block text-[10px]">
+                                      (Declared)
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -163,7 +167,7 @@ export default function FerryDeck({
                                 onUnloadVehicle && onUnloadVehicle(veh.id);
                               }}
                               title="Unload from deck"
-                              className="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+                              className="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors shrink-0 ml-2"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
