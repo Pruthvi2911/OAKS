@@ -2,9 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { DEFAULT_FERRY } from '../../lib/constants.js';
-import { INITIAL_MOCK_CROSSING, INITIAL_MOCK_QUEUE } from '../../lib/mockData.js';
+import { INITIAL_MOCK_CROSSING } from '../../lib/mockData.js';
 import { getEffectiveWeight } from '../../safety/validateDeck.js';
 import { useConnectionStatus } from '../../lib/offline.js';
+import {
+  subscribeToFerryConfig,
+  subscribeToActiveCrossing,
+  subscribeToQueue,
+} from '../../lib/sync.js';
+import {
+  seedInitialDatabase,
+  assignVehicleToBay,
+  unloadVehicleFromDeck,
+  updateVerifiedWeight,
+  confirmHazardousCargo,
+  markVehicleNoShow,
+  updateQueueEntry,
+} from '../../lib/queue.js';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase.js';
 import MasterHeader from '../../components/master/MasterHeader.js';
 import FerryDeck from '../../components/deck/FerryDeck.js';
 import QueuePanel from '../../components/master/QueuePanel.js';
@@ -19,9 +35,10 @@ export default function MasterDashboardPage() {
   const connectionState = useConnectionStatus();
   const [ferryConfig, setFerryConfig] = useState(DEFAULT_FERRY);
   const [crossing, setCrossing] = useState(INITIAL_MOCK_CROSSING);
-  const [queue, setQueue] = useState(INITIAL_MOCK_QUEUE);
+  const [queue, setQueue] = useState([]);
+  const [isSeeding, setIsSeeding] = useState(false);
 
-  const [selectedVehicleId, setSelectedVehicleId] = useState('veh-22');
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [verifyModalVehicle, setVerifyModalVehicle] = useState(null);
   const [hazardModalVehicle, setHazardModalVehicle] = useState(null);
   const [sessionId, setSessionId] = useState('');
@@ -30,9 +47,29 @@ export default function MasterDashboardPage() {
   useEffect(() => {
     const sid = getMasterSessionId();
     setSessionId(sid);
-    if (!crossing.activeMasterSessionId) {
-      setCrossing((prev) => ({ ...prev, activeMasterSessionId: sid }));
-    }
+  }, []);
+
+  // Wire up Firestore realtime listeners on mount
+  useEffect(() => {
+    // Seed Firestore with initial data (idempotent — won't overwrite existing docs)
+    const init = async () => {
+      setIsSeeding(true);
+      await seedInitialDatabase();
+      setIsSeeding(false);
+    };
+    init();
+
+    const unsubFerry = subscribeToFerryConfig(DEFAULT_FERRY.id, setFerryConfig);
+    const unsubCrossing = subscribeToActiveCrossing((activeCrossing) => {
+      if (activeCrossing) setCrossing(activeCrossing);
+    });
+    const unsubQueue = subscribeToQueue(setQueue);
+
+    return () => {
+      unsubFerry();
+      unsubCrossing();
+      unsubQueue();
+    };
   }, []);
 
   // Filter vehicles on deck vs waiting queue
@@ -60,121 +97,63 @@ export default function MasterDashboardPage() {
 
   const selectedVehicle = queue.find((v) => v.id === selectedVehicleId) || null;
 
-  // Handlers
-  const handleAssignBay = (vehId, targetBay) => {
-    setQueue((prev) =>
-      prev.map((v) => {
-        if (v.id === vehId) {
-          return {
-            ...v,
-            status: 'LOADED',
-            bay: targetBay,
-            crossingId: crossing.id,
-          };
-        }
-        return v;
-      })
-    );
+  // --- All mutations now write to Firestore; onSnapshot propagates changes back to state ---
+
+  const handleAssignBay = async (vehId, targetBay) => {
+    await assignVehicleToBay(vehId, targetBay, crossing.id);
   };
 
-  const handleUnloadVehicle = (vehId) => {
-    setQueue((prev) =>
-      prev.map((v) => {
-        if (v.id === vehId) {
-          return {
-            ...v,
-            status: 'WAITING',
-            bay: null,
-            crossingId: null,
-          };
-        }
-        return v;
-      })
-    );
+  const handleUnloadVehicle = async (vehId) => {
+    await unloadVehicleFromDeck(vehId);
   };
 
-  const handleSaveVerifiedWeight = (vehId, verifiedWeightKg) => {
-    setQueue((prev) =>
-      prev.map((v) => {
-        if (v.id === vehId) {
-          return {
-            ...v,
-            verifiedWeight: Number(verifiedWeightKg),
-          };
-        }
-        return v;
-      })
-    );
+  const handleSaveVerifiedWeight = async (vehId, verifiedWeightKg) => {
+    await updateVerifiedWeight(vehId, verifiedWeightKg);
   };
 
-  const handleConfirmHazard = (vehId) => {
-    setQueue((prev) =>
-      prev.map((v) => {
-        if (v.id === vehId) {
-          return {
-            ...v,
-            hazardConfirmed: true,
-          };
-        }
-        return v;
-      })
-    );
+  const handleConfirmHazard = async (vehId) => {
+    await confirmHazardousCargo(vehId);
   };
 
-  const handleMarkNoShow = (vehId) => {
-    setQueue((prev) =>
-      prev.map((v) => {
-        if (v.id === vehId) {
-          return {
-            ...v,
-            status: 'NO_SHOW',
-            bay: null,
-          };
-        }
-        return v;
-      })
-    );
-    if (selectedVehicleId === vehId) {
-      setSelectedVehicleId(null);
-    }
+  const handleMarkNoShow = async (vehId) => {
+    await markVehicleNoShow(vehId);
+    if (selectedVehicleId === vehId) setSelectedVehicleId(null);
   };
 
-  // Complete crossing & promote next queue run
-  const handleCastOff = () => {
+  // Complete crossing & open next run in Firestore
+  const handleCastOff = async () => {
     const currentRunNumber = parseInt(crossing.id.replace('crossing-', '')) || 42;
     const nextCrossingId = `crossing-${currentRunNumber + 1}`;
 
-    // Mark loaded deck vehicles as COMPLETED
-    setQueue((prev) =>
-      prev.map((v) => {
-        if (v.status === 'LOADED' || v.status === 'BOARDING') {
-          return {
-            ...v,
-            status: 'COMPLETED',
-          };
-        }
-        return v;
-      })
+    // Mark all on-deck vehicles COMPLETED
+    const markPromises = loadedVehicles.map((v) =>
+      updateQueueEntry(v.id, { status: 'COMPLETED', bay: null })
     );
+    await Promise.all(markPromises);
 
-    // Create new active crossing
-    setCrossing({
-      id: nextCrossingId,
-      ferryId: ferryConfig.id,
-      status: 'LOADING',
-      activeMasterSessionId: getMasterSessionId(),
-      createdAt: new Date().toISOString(),
-      castOffAt: null,
-      completedAt: null,
-    });
+    // Create next crossing document — listener will update crossing state automatically
+    try {
+      await setDoc(doc(db, 'crossings', nextCrossingId), {
+        id: nextCrossingId,
+        ferryId: ferryConfig.id,
+        status: 'LOADING',
+        activeMasterSessionId: getMasterSessionId(),
+        createdAt: new Date().toISOString(),
+        castOffAt: null,
+        completedAt: null,
+      });
+    } catch (err) {
+      console.warn('Cast off crossing write warning:', err.message);
+    }
 
     setSelectedVehicleId(null);
   };
 
-  const handleResetData = () => {
-    setQueue(INITIAL_MOCK_QUEUE);
-    setCrossing(INITIAL_MOCK_CROSSING);
-    setSelectedVehicleId('veh-22');
+  const handleResetData = async () => {
+    setIsSeeding(true);
+    await seedInitialDatabase();
+    setIsSeeding(false);
+    setSelectedVehicleId(null);
   };
 
   return (
@@ -215,11 +194,15 @@ export default function MasterDashboardPage() {
                   ACTIVE MASTER
                 </span>
               )}
+              {isSeeding && (
+                <span className="text-sky-400 animate-pulse ml-3">● Syncing Firestore…</span>
+              )}
             </div>
 
             <button
               onClick={handleResetData}
-              className="text-slate-400 hover:text-white flex items-center gap-1.5 hover:bg-slate-800 px-2.5 py-1 rounded-lg transition-colors"
+              disabled={isSeeding}
+              className="text-slate-400 hover:text-white flex items-center gap-1.5 hover:bg-slate-800 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-40"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Reset Seed Data

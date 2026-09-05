@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { VEHICLE_TYPES, PRIORITY_LEVELS, createQueueEntryDoc } from '../../lib/constants.js';
+import { addQueueEntry } from '../../lib/queue.js';
 import TicketCard from '../../components/driver/TicketCard.js';
 import { Anchor, ShieldAlert, Siren, CheckCircle2, ArrowRight } from 'lucide-react';
 
@@ -13,7 +14,7 @@ export default function DriverCheckInPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdTicket, setCreatedTicket] = useState(null);
-  const [localQueue, setLocalQueue] = useState([]);
+  const [error, setError] = useState(null);
 
   // Auto-fill weight estimate when vehicle type changes
   const handleTypeChange = (newType) => {
@@ -23,33 +24,34 @@ export default function DriverCheckInPage() {
     }
   };
 
-  // Submit Handler with Duplicate Protection
-  const handleSubmit = (e) => {
+  // Submit Handler — writes to Firestore
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return; // Prevent double submission
 
     setIsSubmitting(true);
+    setError(null);
 
     // Generate random 4-character code (e.g. 7K42)
     const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
     const checkInCode = `FERRY-${randomCode}`;
 
-    const newTicket = createQueueEntryDoc({
-      id: `veh-${Date.now()}`,
-      checkInCode,
-      vehicleType,
-      declaredWeight: Number(declaredWeight),
-      hazardous,
-      priority,
-      status: 'WAITING',
-    });
-
-    // Simulate network delay to demonstrate duplicate protection button
-    setTimeout(() => {
-      setLocalQueue((prev) => [...prev, newTicket]);
-      setCreatedTicket(newTicket);
+    try {
+      const newEntry = await addQueueEntry({
+        checkInCode,
+        vehicleType,
+        declaredWeight: Number(declaredWeight),
+        hazardous,
+        priority,
+        status: 'WAITING',
+      });
+      setCreatedTicket(newEntry);
+    } catch (err) {
+      setError('Check-in failed. Please try again.');
+      console.error('addQueueEntry error:', err);
+    } finally {
       setIsSubmitting(false);
-    }, 600);
+    }
   };
 
   return (
@@ -70,11 +72,17 @@ export default function DriverCheckInPage() {
           </p>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-bold px-4 py-3 rounded-xl">
+            ⚠ {error}
+          </div>
+        )}
+
         {/* Display Ticket Card if created */}
         {createdTicket ? (
           <TicketCard
             ticket={createdTicket}
-            queueList={localQueue}
             onNewCheckIn={() => setCreatedTicket(null)}
           />
         ) : (

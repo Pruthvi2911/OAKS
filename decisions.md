@@ -96,3 +96,17 @@ To prevent data migration bugs between mock local state and Firestore, the follo
   1. Automated/manual test verification.
   2. Updating `flow.md` and `decisions.md`.
   3. Git commit on feature branch -> Merge into `dev` -> Merge into `main`.
+
+---
+
+## 6. Step 8 — Firestore Wiring Architecture Decision
+
+**Problem**: All three pages (`/master`, `/queue`, `/driver`) were running independent local React state seeded from `INITIAL_MOCK_QUEUE`. Mutations on `/master` (cast off, assign bay) were not reflected on `/queue` or `/driver` — pages were completely disconnected.
+
+**Decision**: Replace all `useState(INITIAL_MOCK_QUEUE)` with live `onSnapshot` listeners from `lib/sync.js`. Write path for all mutations goes through `lib/queue.js` Firestore helpers. The `onSnapshot` listener updates React state on all active tabs automatically.
+
+**Key flow change**:
+- Before: `UI click → setQueue(localUpdate)` (isolated per page)
+- After: `UI click → Firestore write → onSnapshot fires → setQueue(firestoreData)` (shared across all tabs/pages)
+
+**Seeding**: `seedInitialDatabase()` called once on `/master` mount. It is idempotent (uses `setDoc` so same IDs are overwritten safely on Reset).

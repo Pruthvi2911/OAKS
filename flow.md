@@ -93,6 +93,7 @@ This document tracks the operational workflows, system architecture pipelines, s
 - **Step 2: Pure Safety Engine & Test Suite** — Completed (`safety/validateDeck.js`, `safety/suggestPlacement.js`, `safety/__tests__/safetyEngine.test.js` - 15/15 tests passing).
 - **Step 3: Master Control Surface (`/master`)** — Completed (`app/master/page.js`, `MasterHeader.js`, `FerryDeck.js`, `QueuePanel.js`, `RecommendationPanel.js`, `WeightVerifyModal.js`, `HazardModal.js`).
 - **Step 4: Driver & Queue Views (`/driver`, `/queue`)** — Completed (`app/driver/page.js`, `TicketCard.js`, `app/queue/page.js`, `utils/queueSorting.js`).
-- **Step 5: Firestore & Realtime Synchronization** — Completed (`lib/queue.js`, `lib/sync.js`, multi-tab offline persistence enabled).
+- **Step 5: Firestore Layer** — Completed (`lib/queue.js`, `lib/sync.js`, multi-tab offline persistence enabled).
 - **Step 6: Offline Resilience & Multi-Master Guard** — Completed (`lib/offline.js`, `MultiMasterGuard.js`, `CastOffButton.js` offline block & pre-departure checklist).
 - **Step 7: Final Release Package** — Completed (`npm run build` passing, main/dev git branches synced).
+- **Step 8: Wire Firestore Realtime Listeners Into All Page Components** — Completed. All three pages (`/master`, `/driver`, `/queue`) now subscribe to Firestore `onSnapshot` listeners via `lib/sync.js`. All mutations (assign bay, unload, verify weight, hazard confirm, no-show, cast off, check-in) write directly to Firestore via `lib/queue.js`. Local mock state replaced. Changes on any page propagate to all others in real time.

@@ -1,15 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
-import { INITIAL_MOCK_QUEUE, INITIAL_MOCK_CROSSING } from '../../lib/mockData.js';
+import React, { useState, useEffect } from 'react';
 import { DEFAULT_FERRY, VEHICLE_TYPES, PRIORITY_LEVELS } from '../../lib/constants.js';
+import { INITIAL_MOCK_CROSSING } from '../../lib/mockData.js';
 import { getEffectiveWeight } from '../../safety/validateDeck.js';
 import { calculateDynamicQueuePosition } from '../../utils/queueSorting.js';
+import { subscribeToQueue, subscribeToActiveCrossing } from '../../lib/sync.js';
 import { Anchor, Clock, Siren, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function PublicQueuePage() {
-  const [queue, setQueue] = useState(INITIAL_MOCK_QUEUE);
+  const [queue, setQueue] = useState([]);
   const [crossing, setCrossing] = useState(INITIAL_MOCK_CROSSING);
+
+  // Subscribe to live Firestore queue & crossing updates
+  useEffect(() => {
+    const unsubQueue = subscribeToQueue(setQueue);
+    const unsubCrossing = subscribeToActiveCrossing((activeCrossing) => {
+      if (activeCrossing) setCrossing(activeCrossing);
+    });
+    return () => {
+      unsubQueue();
+      unsubCrossing();
+    };
+  }, []);
 
   // Compute active deck weight
   const loadedVehicles = queue.filter((v) => v.status === 'LOADED' || v.status === 'BOARDING');
