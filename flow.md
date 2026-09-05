@@ -57,7 +57,7 @@ This document tracks the operational workflows, system architecture pipelines, s
 
 ---
 
-## 3. Safety Evaluation Flow
+## 3. Safety Evaluation Flow (`safety/validateDeck.js` & `safety/suggestPlacement.js`)
 
 ```text
 Master selects vehicle from Queue
@@ -72,9 +72,9 @@ Evaluate    Evaluate    Evaluate
    │           │           │
    └───────────┼───────────┘
                ▼
-   Filter Valid Bays (reasons: FITS_CAPACITY, IMPROVES_BALANCE)
+   Filter Valid Bays (Check: totalWeight <= maxWeight, bayWeight <= maxBayWeight, imbalance <= maxImbalance)
                ▼
-   Score Valid Bays by Minimum Post-Placement Imbalance
+   Score Valid Bays by Minimum Left/Right Imbalance Spread: Math.abs(leftWeight - rightWeight)
                ▼
    Recommend Best Valid Bay & Output Explicit Rationale
 ```
@@ -83,9 +83,9 @@ Evaluate    Evaluate    Evaluate
 
 ## 4. Current Implementation Status
 
-- **Step 1: Foundation & Base Structure** — Completed (`package.json`, `lib/constants.js`, `lib/firebase.js`, `lib/mockData.js`, `flow.md`, `decisions.md`, Git setup).
-- **Step 2: Pure Safety Engine** — Pending execution.
-- **Step 3: Master Control Surface** — Pending execution.
+- **Step 1: Foundation & Base Structure** — Completed (`package.json`, `lib/constants.js`, `lib/firebase.js`, `lib/mockData.js`, `flow.md`, `decisions.md`, Git branches setup).
+- **Step 2: Pure Safety Engine & Test Suite** — Completed (`safety/validateDeck.js`, `safety/suggestPlacement.js`, `safety/__tests__/safetyEngine.test.js` - 15/15 tests passing).
+- **Step 3: Master Control Surface** — In Progress (Next).
 - **Step 4: Driver & Queue Views** — Pending execution.
 - **Step 5: Firestore & Realtime Listeners** — Pending execution.
 - **Step 6: Offline Resilience & Multi-Master Guard** — Pending execution.
