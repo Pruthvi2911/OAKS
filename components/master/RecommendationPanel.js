@@ -52,17 +52,17 @@ export default function RecommendationPanel({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-300 mt-1">
-              <span>
-                Weight: <strong className="text-white">{effWeight.toLocaleString()} kg</strong>
-              </span>
+            <div className="flex flex-col items-start gap-0.5 text-xs text-slate-300 mt-1">
+              <strong className="text-white whitespace-nowrap">
+                {effWeight.toLocaleString()} kg
+              </strong>
               {selectedVehicle.verifiedWeight ? (
-                <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                <span className="text-emerald-400 font-semibold text-[10px]">
                   ✓ Verified by Master
                 </span>
               ) : (
-                <span className="text-slate-400 bg-slate-700/60 px-2 py-0.5 rounded border border-slate-600">
-                  (Declared by Driver)
+                <span className="text-slate-400 text-[10px]">
+                  Declared by Driver
                 </span>
               )}
             </div>
@@ -71,25 +71,25 @@ export default function RecommendationPanel({
 
         {/* Weight & Hazard Quick Actions */}
         {!isViewOnly && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 shrink-0">
             <button
               onClick={() => onOpenVerifyModal && onOpenVerifyModal(selectedVehicle)}
-              className="text-xs font-semibold text-sky-400 hover:text-white bg-sky-500/10 hover:bg-sky-500 px-3 py-1.5 rounded-lg border border-sky-500/30 transition-all flex items-center gap-1.5"
+              className="text-xs font-semibold text-sky-400 hover:text-white bg-sky-500/10 hover:bg-sky-500 px-3 py-1.5 rounded-lg border border-sky-500/30 transition-all flex items-center gap-1.5 whitespace-nowrap"
             >
-              <Scale className="w-3.5 h-3.5" />
+              <Scale className="w-3.5 h-3.5 shrink-0" />
               {selectedVehicle.verifiedWeight ? 'Adjust Weight' : 'Verify Weight'}
             </button>
 
             {selectedVehicle.hazardous && (
               <button
                 onClick={() => onOpenHazardModal && onOpenHazardModal(selectedVehicle)}
-                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   selectedVehicle.hazardConfirmed
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     : 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse'
                 }`}
               >
-                <ShieldAlert className="w-3.5 h-3.5" />
+                <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                 {selectedVehicle.hazardConfirmed ? '✓ Hazard Confirmed' : 'Confirm Hazard'}
               </button>
             )}
