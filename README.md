@@ -22,15 +22,18 @@ A real-time, offline-resilient, weight-balanced boarding control surface for rur
 This project was built following a strict production-grade Git branching workflow. Each step of development was isolated in a dedicated feature branch, verified via unit/integration tests, merged into `dev` for staging integration, and finally merged into `main` for release.
 
 ```text
-  main (Production Baseline) ────────────────────────────────────────────────────────────► v1.0.0 Release
-    │                                                                                       ▲
-    ├─► dev (Staging Integration) ───► Merge Step 1 ──► Merge Step 2 ──► Merge Steps 3-7 ───┤
-    │                                     ▲                 ▲                 ▲
-    ├─► feat/step-1-foundation ───────────┘                 │                 │
-    ├─► feat/step-2-safety-engine ──────────────────────────┘                 │
-    ├─► feat/step-3-master-deck ──────────────────────────────────────────────┤
-    ├─► feat/step-4-driver-queue ─────────────────────────────────────────────┤
-    └─► feat/step-5-6-7-release ──────────────────────────────────────────────┘
+  main (Production Baseline) ───────────────────────────────────────────────────────────────────────► Latest
+    │                                                                                                   ▲
+    ├─► dev (Staging Integration) ──► Step 1 ──► Step 2 ──► Steps 3-7 ──► Step 8 ──► Step 9 ──► UI ───┤
+    │                                   ▲           ▲           ▲            ▲           ▲        ▲
+    ├─► feat/step-1-foundation ──────────┘           │           │            │           │        │
+    ├─► feat/step-2-safety-engine ───────────────────┘           │            │           │        │
+    ├─► feat/step-3-master-deck ─────────────────────────────────┤            │           │        │
+    ├─► feat/step-4-driver-queue ────────────────────────────────┤            │           │        │
+    ├─► feat/step-5-6-7-release ─────────────────────────────────┘            │           │        │
+    ├─► feat/step-8-firestore-wiring ─────────────────────────────────────────┘           │        │
+    └─► feat/step-9-numberplate-smartload ────────────────────────────────────────────────┘        │
+        (UI fix commits applied directly on main after step 9) ──────────────────────────────────────┘
 ```
 
 ### Feature Branch Progression Breakdown
@@ -42,8 +45,11 @@ This project was built following a strict production-grade Git branching workflo
 | **`feat/step-1-foundation`** | Initialized Next.js 14 App Router project, Tailwind CSS, Firebase SDK, constants, mock seed data, `flow.md`, and `decisions.md`. | Verified directory structure & schema keys. |
 | **`feat/step-2-safety-engine`** | Implemented pure JS safety engine (`validateDeck.js`, `suggestPlacement.js`) and executable test suite (`safetyEngine.test.js`). | **15/15 Automated Unit Tests Passing**. |
 | **`feat/step-3-master-deck`** | Built 3-bay whole-deck control surface (`/master`), weight gauges, queue panel, 3-bay rationale engine, weight verify modal, and hazard confirmation modal. | Interactive UI deck & recommendation testing. |
-| **`feat/step-4-driver-queue`** | Built Driver Self Check-In (`/driver`) with duplicate submission protection, ticket card generation, dynamic queue ranking (`queueSorting.js`), and Public Terminal Board (`/queue`). | Dynamic queue position calculation verified. |
-| **`feat/step-5-6-7-release`** | Connected Firestore real-time listeners (`lib/sync.js`, `lib/queue.js`), multi-tab offline persistence (`lib/offline.js`), pre-departure checklist, offline Cast Off block guard (`CastOffButton.js`), multi-master session lock (`MultiMasterGuard.js`), and documentation. | Offline mode & multi-master view-only guard verified. |
+| **`feat/step-4-driver-queue`** | Built Driver Self Check-In (`/driver`) with ticket card generation, dynamic queue ranking (`queueSorting.js`), and Public Terminal Board (`/queue`). | Dynamic queue position calculation verified. |
+| **`feat/step-5-6-7-release`** | Connected Firestore real-time listeners (`lib/sync.js`, `lib/queue.js`), multi-tab offline persistence (`lib/offline.js`), Cast Off guard, multi-master session lock (`MultiMasterGuard.js`), and full documentation. | Offline mode & multi-master view-only guard verified. |
+| **`feat/step-8-firestore-wiring`** | Replaced all local `useState(INITIAL_MOCK_QUEUE)` with live Firestore `onSnapshot` listeners across all 3 pages. All mutations (assign, unload, verify, hazard, no-show, cast off, check-in) write to Firestore. Pages now share real-time state. | Real-time cross-tab sync verified on `/master`, `/queue`, `/driver`. |
+| **`feat/step-9-numberplate-smartload`** | Replaced random check-in codes with structured Indian vehicle registration number input (state + RTO + series + number, e.g. `KA 01 AB 1234`). Added `suggestOptimalNextLoad()` to safety engine — computes the single best vehicle+bay combo across all waiting vehicles to minimise imbalance. Displayed as a one-click smart banner on `/master`. | Build clean. Smart suggestion verified against seeded queue. |
+| **UI Fix Commits (on `main`)** | Restructured bay vehicle cards and queue panel cards to strict vertical centred layout (`flex-col items-center`). Fixed weight+declared stacking, `whitespace-nowrap` on buttons, full number plate display in `font-mono` without truncation. Applied uniformly across `FerryDeck.js`, `QueuePanel.js`, and `RecommendationPanel.js`. | Visual layout verified in browser at `/master`. |
 
 ### How to Inspect Branch History Locally
 
