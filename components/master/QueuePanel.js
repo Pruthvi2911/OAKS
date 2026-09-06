@@ -62,38 +62,45 @@ export default function QueuePanel({
                     : 'bg-slate-900/80 border-slate-700/80 hover:border-slate-600'
                 }`}
               >
-                {/* Left Section: Icon and Info Stack */}
+                {/* Left Section: Queue # + Icon + Info Stack */}
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <span className="text-2xl shrink-0">{typeMeta.icon}</span>
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <span className="text-2xl">{typeMeta.icon}</span>
+                    <span className="text-[10px] font-black text-slate-500">#{index + 1}</span>
+                  </div>
 
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-black text-slate-400">#{index + 1}</span>
-                      {isEmergency && (
-                        <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full w-fit whitespace-nowrap flex items-center gap-1 shrink-0 animate-pulse">
-                          <Siren className="w-3 h-3" />
-                          PRIORITY
-                        </span>
-                      )}
-                      {veh.hazardous && (
-                        <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-1.5 py-0.5 rounded w-fit whitespace-nowrap flex items-center gap-1 shrink-0">
-                          <ShieldAlert className="w-3 h-3" />
-                          HAZARD
-                        </span>
-                      )}
-                    </div>
+                    {/* Priority / Hazard tags */}
+                    {(isEmergency || veh.hazardous) && (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {isEmergency && (
+                          <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1 animate-pulse">
+                            <Siren className="w-3 h-3" />
+                            PRIORITY
+                          </span>
+                        )}
+                        {veh.hazardous && (
+                          <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap flex items-center gap-1">
+                            <ShieldAlert className="w-3 h-3" />
+                            HAZARD
+                          </span>
+                        )}
+                      </div>
+                    )}
 
-                    <span className="text-sm font-bold text-white truncate">
-                      #{veh.checkInCode?.replace('FERRY-', '') || veh.id}
+                    {/* Number plate — monospace, no truncation, wraps naturally */}
+                    <span className="font-mono font-bold text-sm text-white leading-tight break-all">
+                      {veh.checkInCode || veh.id}
                     </span>
 
-                    <div className="mt-0.5">
-                      <div className="text-xs font-semibold text-slate-200">
+                    {/* Weight row */}
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-bold text-slate-200">
                         {effWeight.toLocaleString()} kg
-                      </div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
-                        {veh.verifiedWeight ? '✓ VERIFIED' : 'DECLARED'}
-                      </div>
+                      </span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
+                        {veh.verifiedWeight ? '✓ Verified' : 'Declared'}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -116,48 +116,52 @@ export default function FerryDeck({
                         <div
                           key={veh.id}
                           onClick={() => onSelectDeckVehicle && onSelectDeckVehicle(veh)}
-                          className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-w-0 ${
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col items-center text-center gap-2 min-w-0 ${
                             isSelected
                               ? 'bg-slate-700 border-sky-400 ring-1 ring-sky-400/50'
                               : 'bg-slate-800/90 border-slate-700 hover:border-slate-600'
                           }`}
                         >
-                          <div className="flex items-center gap-3 w-full">
-                            <span className="text-2xl shrink-0">{typeMeta.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-sm text-white truncate">
-                                  #{veh.checkInCode?.replace('FERRY-', '') || veh.id}
-                                </span>
-                                {veh.priority === 'EMERGENCY' && (
-                                  <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0">
-                                    PRIORITY
-                                  </span>
-                                )}
-                                {veh.hazardous && (
-                                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-1.5 py-0.2 rounded flex items-center gap-0.5 shrink-0">
-                                    <ShieldAlert className="w-2.5 h-2.5" />
-                                    HAZARD
-                                  </span>
-                                )}
-                              </div>
+                          {/* Icon */}
+                          <span className="text-3xl leading-none">{typeMeta.icon}</span>
 
-                              <div className="text-xs text-slate-300 mt-1 flex items-center justify-between">
-                                <span className="font-bold text-white">{effWeight.toLocaleString()} kg</span>
-                                {veh.verifiedWeight ? (
-                                  <span className="text-emerald-400 font-semibold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                                    ✓ Verified
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 italic text-[10px] bg-slate-700/50 px-1.5 py-0.5 rounded">
-                                    (Declared)
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                          {/* Number Plate */}
+                          <span className="font-mono font-bold text-xs text-white tracking-wider leading-tight break-all">
+                            {veh.checkInCode || veh.id}
+                          </span>
+
+                          {/* Priority / Hazard Tags */}
+                          <div className="flex flex-col items-center gap-1 w-full">
+                            {veh.priority === 'EMERGENCY' && (
+                              <span className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] font-black px-2 py-0.5 rounded w-fit">
+                                🚑 EMERGENCY
+                              </span>
+                            )}
+                            {veh.hazardous && (
+                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-2 py-0.5 rounded flex items-center gap-0.5 w-fit">
+                                <ShieldAlert className="w-2.5 h-2.5" />
+                                HAZARD
+                              </span>
+                            )}
                           </div>
 
-                          {/* Prominent Full-Width Red Unload Button */}
+                          {/* Weight */}
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="font-black text-base text-white">
+                              {effWeight.toLocaleString()} kg
+                            </span>
+                            {veh.verifiedWeight ? (
+                              <span className="text-emerald-400 font-semibold text-[10px] bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 w-fit">
+                                ✓ Verified
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic text-[10px] bg-slate-700/50 px-1.5 py-0.5 rounded w-fit">
+                                (Declared)
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Unload Button — full width, prominent */}
                           {!isViewOnly && (
                             <button
                               onClick={(e) => {
@@ -165,7 +169,7 @@ export default function FerryDeck({
                                 onUnloadVehicle && onUnloadVehicle(veh.id);
                               }}
                               title="Unload vehicle from deck"
-                              className="mt-3 w-full py-1.5 px-3 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow"
+                              className="w-full py-1.5 px-3 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Unload Vehicle
