@@ -102,6 +102,43 @@ npm run build
 
 ---
 
+## 🔥 Firebase Setup
+
+The app ships with **built-in demo credentials** so it works out of the box — no Firebase account needed to run locally.
+
+### Demo Mode (Default — No Setup Required)
+Data is stored in **browser IndexedDB** via Firestore offline persistence. All three pages (`/master`, `/driver`, `/queue`) sync in real time across tabs in the same browser.
+
+> **Ad Blocker Note**: If you have an ad blocker (uBlock Origin, AdBlock, etc.), it may block requests to `firestore.googleapis.com`. This causes cosmetic `ERR_BLOCKED_BY_CLIENT` errors in the console but **does not break the app** — offline persistence handles all reads and writes through IndexedDB. To suppress the console noise, whitelist `localhost` in your ad blocker settings.
+
+### Real Firebase Project (Optional — For Cross-Device Sync)
+To enable true multi-device real-time sync, create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
+
+Then restart the dev server. The app will automatically pick up your real Firebase project instead of the demo keys.
+
+> **Firestore Rules**: Set your Firestore security rules to allow read/write for local testing:
+> ```
+> rules_version = '2';
+> service cloud.firestore {
+>   match /databases/{database}/documents {
+>     match /{document=**} {
+>       allow read, write: if true;
+>     }
+>   }
+> }
+> ```
+
+---
+
 ## ⚠️ Hazardous Cargo Policy Note
 
 Hazard compatibility rules in this prototype require explicit ferry master confirmation. Hazard compatibility rules are configurable and should be replaced with actual operator/regulatory rules before production deployment.
