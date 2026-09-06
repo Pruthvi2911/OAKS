@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { VEHICLE_TYPES, PRIORITY_LEVELS, createQueueEntryDoc } from '../../lib/constants.js';
+import { VEHICLE_TYPES, PRIORITY_LEVELS, INDIAN_STATE_CODES, createQueueEntryDoc } from '../../lib/constants.js';
 import { addQueueEntry } from '../../lib/queue.js';
 import TicketCard from '../../components/driver/TicketCard.js';
-import { Anchor, ShieldAlert, Siren, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Anchor, ShieldAlert, Siren, ArrowRight } from 'lucide-react';
 
 export default function DriverCheckInPage() {
   const [vehicleType, setVehicleType] = useState('CAR');
@@ -12,9 +12,15 @@ export default function DriverCheckInPage() {
   const [hazardous, setHazardous] = useState(false);
   const [priority, setPriority] = useState(PRIORITY_LEVELS.NORMAL);
 
+  // Number plate fields: KA · 01 · AB · 1234
+  const [plateState, setPlateState] = useState('KA');
+  const [plateRTO, setPlateRTO] = useState('');
+  const [plateSeries, setPlateSeries] = useState('');
+  const [plateNumber, setPlateNumber] = useState('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdTicket, setCreatedTicket] = useState(null);
-  const [error, setError] = useState(null);
+  const [plateError, setPlateError] = useState('');
 
   // Auto-fill weight estimate when vehicle type changes
   const handleTypeChange = (newType) => {
@@ -24,34 +30,59 @@ export default function DriverCheckInPage() {
     }
   };
 
-  // Submit Handler — writes to Firestore
-  const handleSubmit = async (e) => {
+  // Validate and build number plate string
+  const buildPlate = () => {
+    const rto = plateRTO.trim().padStart(2, '0');
+    const series = plateSeries.trim().toUpperCase();
+    const num = plateNumber.trim().padStart(4, '0');
+    if (!plateState) return null;
+    if (!/^\d{1,2}$/.test(plateRTO.trim())) return null;
+    if (!/^[A-Z]{1,2}$/i.test(plateSeries.trim())) return null;
+    if (!/^\d{1,4}$/.test(plateNumber.trim())) return null;
+    return `${plateState} ${rto} ${series} ${num}`;
+  };
+
+  // Submit Handler — shows ticket immediately, writes to Firestore in background
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
 
+    const plate = buildPlate();
+    if (!plate) {
+      setPlateError('Enter a valid number plate — e.g. KA 01 AB 1234');
+      return;
+    }
+    setPlateError('');
     setIsSubmitting(true);
-    setError(null);
 
-    // Generate random 4-character code (e.g. 7K42)
-    const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const checkInCode = `FERRY-${randomCode}`;
-
-    try {
-      const newEntry = await addQueueEntry({
-        checkInCode,
+    // Build ticket doc locally using number plate as the check-in code
+    const localEntry = {
+      id: `veh-${Date.now()}`,
+      ...createQueueEntryDoc({
+        checkInCode: plate,
         vehicleType,
         declaredWeight: Number(declaredWeight),
         hazardous,
         priority,
         status: 'WAITING',
-      });
-      setCreatedTicket(newEntry);
-    } catch (err) {
-      setError('Check-in failed. Please try again.');
-      console.error('addQueueEntry error:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
+      }),
+    };
+
+    // Show ticket immediately — don't block UI on network
+    setCreatedTicket(localEntry);
+    setIsSubmitting(false);
+
+    // Write to Firestore in background
+    addQueueEntry({
+      checkInCode: plate,
+      vehicleType,
+      declaredWeight: Number(declaredWeight),
+      hazardous,
+      priority,
+      status: 'WAITING',
+    }).catch((err) => {
+      console.warn('Background Firestore check-in write warning:', err.message);
+    });
   };
 
   return (
@@ -68,22 +99,18 @@ export default function DriverCheckInPage() {
             DRIVER SELF CHECK-IN
           </h1>
           <p className="text-xs text-slate-400">
-            Enter your vehicle specifications to join the staging boarding queue.
+            Enter your vehicle registration number and details to join the boarding queue.
           </p>
         </div>
-
-        {/* Error Banner */}
-        {error && (
-          <div className="bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-bold px-4 py-3 rounded-xl">
-            ⚠ {error}
-          </div>
-        )}
 
         {/* Display Ticket Card if created */}
         {createdTicket ? (
           <TicketCard
             ticket={createdTicket}
-            onNewCheckIn={() => setCreatedTicket(null)}
+            onNewCheckIn={() => {
+              setCreatedTicket(null);
+              setPlateRTO(''); setPlateSeries(''); setPlateNumber('');
+            }}
           />
         ) : (
           /* Check-In Form */
@@ -91,6 +118,60 @@ export default function DriverCheckInPage() {
             onSubmit={handleSubmit}
             className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5"
           >
+            {/* ── Number Plate Input ── */}
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">
+                Vehicle Registration Number
+              </label>
+              {/* Live preview */}
+              <div className="text-center bg-slate-950 border border-slate-700 rounded-xl py-2 mb-3 font-mono font-black text-lg tracking-[0.25em] text-white">
+                {[plateState, plateRTO || '00', plateSeries.toUpperCase() || 'AA', plateNumber || '0000'].join(' ')}
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {/* State Code */}
+                <select
+                  value={plateState}
+                  onChange={(e) => setPlateState(e.target.value)}
+                  className="col-span-1 bg-slate-800 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                >
+                  {INDIAN_STATE_CODES.map((code) => (
+                    <option key={code} value={code}>{code}</option>
+                  ))}
+                </select>
+                {/* RTO District (2 digits) */}
+                <input
+                  type="text"
+                  maxLength={2}
+                  placeholder="01"
+                  value={plateRTO}
+                  onChange={(e) => setPlateRTO(e.target.value.replace(/\D/g, ''))}
+                  className="col-span-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono font-bold text-sm text-center focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                />
+                {/* Series (1-2 letters) */}
+                <input
+                  type="text"
+                  maxLength={2}
+                  placeholder="AB"
+                  value={plateSeries}
+                  onChange={(e) => setPlateSeries(e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())}
+                  className="col-span-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono font-bold text-sm text-center focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                />
+                {/* Sequential Number (up to 4 digits) */}
+                <input
+                  type="text"
+                  maxLength={4}
+                  placeholder="1234"
+                  value={plateNumber}
+                  onChange={(e) => setPlateNumber(e.target.value.replace(/\D/g, ''))}
+                  className="col-span-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono font-bold text-sm text-center focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                />
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1.5">Format: State · RTO Code · Series · Number (e.g. KA 01 AB 1234)</p>
+              {plateError && (
+                <p className="text-[11px] text-rose-400 font-bold mt-1">⚠ {plateError}</p>
+              )}
+            </div>
+
             {/* Vehicle Type Selection */}
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">

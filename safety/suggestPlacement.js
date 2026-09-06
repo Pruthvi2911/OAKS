@@ -81,3 +81,51 @@ function getWeightFormatted(vehicle) {
   const w = vehicle.verifiedWeight ?? vehicle.declaredWeight;
   return `${w} kg`;
 }
+
+/**
+ * Scans ALL waiting vehicles across ALL 3 bays and finds the single
+ * vehicle+bay combination that produces the minimum left/right imbalance.
+ *
+ * This removes trial-and-error from the master — the system tells them
+ * exactly which vehicle to load next and where.
+ *
+ * @param {Array} waitingVehicles - Vehicles still in queue (WAITING / READY)
+ * @param {Array} loadedVehicles  - Vehicles currently on deck
+ * @param {Object} ferryConfig    - Ferry safety constraints
+ * @returns {Object|null} { vehicle, bay, resultingImbalance } or null if nothing fits
+ */
+export function suggestOptimalNextLoad(
+  waitingVehicles = [],
+  loadedVehicles = [],
+  ferryConfig = DEFAULT_FERRY
+) {
+  let bestCombo = null;
+  let minImbalance = Infinity;
+
+  // Prioritise EMERGENCY vehicles first
+  const sorted = [...waitingVehicles].sort((a, b) => {
+    if (a.priority === 'EMERGENCY' && b.priority !== 'EMERGENCY') return -1;
+    if (a.priority !== 'EMERGENCY' && b.priority === 'EMERGENCY') return 1;
+    return 0;
+  });
+
+  for (const vehicle of sorted) {
+    for (const bay of BAY_LIST) {
+      const result = evaluatePlacement(vehicle, bay, loadedVehicles, ferryConfig);
+      if (result.valid) {
+        const imb = result.postPlacementState.imbalance;
+        if (imb < minImbalance) {
+          minImbalance = imb;
+          bestCombo = { vehicle, bay, resultingImbalance: imb };
+        }
+        // If this is an emergency vehicle and it fits somewhere, recommend it immediately
+        if (vehicle.priority === 'EMERGENCY') {
+          return { vehicle, bay, resultingImbalance: imb };
+        }
+      }
+    }
+  }
+
+  return bestCombo;
+}
+

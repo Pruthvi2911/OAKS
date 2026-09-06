@@ -43,8 +43,8 @@ export default function RecommendationPanel({
           <span className="text-3xl">{typeMeta.icon}</span>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-extrabold text-base text-white">
-                {typeMeta.label.toUpperCase()} #{selectedVehicle.checkInCode?.replace('FERRY-', '') || selectedVehicle.id}
+              <h3 className="font-extrabold text-base text-white font-mono tracking-wide">
+                {selectedVehicle.checkInCode || selectedVehicle.id}
               </h3>
               {isEmergency && (
                 <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">

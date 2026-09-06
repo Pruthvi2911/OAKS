@@ -32,12 +32,12 @@ export default function TicketCard({ ticket, queueList = [], onNewCheckIn }) {
         </span>
       </div>
 
-      {/* Check-In Code Big Display */}
+      {/* Number Plate Big Display */}
       <div className="text-center bg-slate-950 p-6 rounded-xl border border-slate-800">
         <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
-          CHECK-IN CODE
+          REGISTRATION NUMBER
         </div>
-        <div className="text-4xl font-black text-sky-400 tracking-wider font-mono">
+        <div className="text-3xl font-black text-sky-400 tracking-[0.15em] font-mono">
           {ticket.checkInCode}
         </div>
       </div>

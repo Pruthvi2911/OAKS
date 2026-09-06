@@ -29,7 +29,9 @@ import WeightVerifyModal from '../../components/master/WeightVerifyModal.js';
 import HazardModal from '../../components/master/HazardModal.js';
 import MultiMasterGuard, { getMasterSessionId } from '../../components/master/MultiMasterGuard.js';
 import CastOffButton from '../../components/master/CastOffButton.js';
-import { RefreshCw } from 'lucide-react';
+import { suggestOptimalNextLoad } from '../../safety/suggestPlacement.js';
+import { VEHICLE_TYPES } from '../../lib/constants.js';
+import { RefreshCw, Zap } from 'lucide-react';
 
 export default function MasterDashboardPage() {
   const connectionState = useConnectionStatus();
@@ -210,8 +212,59 @@ export default function MasterDashboardPage() {
           </div>
 
           {/* Main Control Surface Grid Layout */}
-          <main className="flex-1 w-full p-4 md:p-6 space-y-6">
-            
+          <main className="flex-1 w-full p-4 md:p-6 space-y-4">
+
+            {/* ── Smart Load Suggestion Banner ── */}
+            {(() => {
+              if (isViewOnly) return null;
+              const suggestion = suggestOptimalNextLoad(waitingVehicles, loadedVehicles, ferryConfig);
+              if (!suggestion) {
+                return waitingVehicles.length === 0 ? null : (
+                  <div className="bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 text-xs text-slate-400">
+                    <Zap className="w-4 h-4 text-slate-500 shrink-0" />
+                    No safe placement found for any waiting vehicle — deck is at or near capacity.
+                  </div>
+                );
+              }
+              const typeMeta = VEHICLE_TYPES[suggestion.vehicle.vehicleType] || VEHICLE_TYPES.CAR;
+              const isEmergency = suggestion.vehicle.priority === 'EMERGENCY';
+              return (
+                <div className={`rounded-xl border px-4 py-3 flex items-center justify-between gap-4 ${
+                  isEmergency
+                    ? 'bg-rose-950/30 border-rose-500/50'
+                    : 'bg-sky-950/30 border-sky-500/40'
+                }`}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Zap className={`w-4 h-4 shrink-0 ${isEmergency ? 'text-rose-400' : 'text-sky-400'}`} />
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        {isEmergency ? '🚑 EMERGENCY — ' : ''}Best Next Load
+                      </div>
+                      <div className="text-xs font-bold text-white truncate">
+                        {typeMeta.icon} {suggestion.vehicle.checkInCode} — Load into{' '}
+                        <span className={`font-black ${isEmergency ? 'text-rose-300' : 'text-sky-300'}`}>
+                          {suggestion.bay} BAY
+                        </span>
+                        <span className="text-slate-400 font-normal ml-2">
+                          → {suggestion.resultingImbalance} kg spread
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAssignBay(suggestion.vehicle.id, suggestion.bay)}
+                    className={`shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all ${
+                      isEmergency
+                        ? 'bg-rose-500 hover:bg-rose-400 text-white'
+                        : 'bg-sky-500 hover:bg-sky-400 text-slate-950'
+                    }`}
+                  >
+                    Load Now →
+                  </button>
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
               {/* Left Column: Waiting Queue (3/12 cols) */}
               <section className="lg:col-span-3 h-full w-full">
