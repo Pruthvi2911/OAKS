@@ -110,3 +110,21 @@ To prevent data migration bugs between mock local state and Firestore, the follo
 - After: `UI click → Firestore write → onSnapshot fires → setQueue(firestoreData)` (shared across all tabs/pages)
 
 **Seeding**: `seedInitialDatabase()` called once on `/master` mount. It is idempotent (uses `setDoc` so same IDs are overwritten safely on Reset).
+
+---
+
+## 7. Step 9 — Indian Number Plate & Smart Load Architecture Decision
+
+**Problem**: The master operator had to manually click through the waiting queue to find a vehicle that would balance the deck well, which is prone to trial-and-error delays. Furthermore, vehicles were using fake `FERRY-XXXX` IDs instead of real-world identifiers.
+
+**Decision**: 
+1. Replaced fake IDs with standard Indian Vehicle Registration formats (e.g., `KA 01 AB 1234`) with structured input validation on the `/driver` page.
+2. Implemented `suggestOptimalNextLoad()` which calculates the optimal vehicle-bay pairing from the *entire* waiting queue and displays it as a one-click banner above the deck grid.
+
+---
+
+## 8. UI Layout Refinement Decision (Cards & Headers)
+
+**Problem**: Horizontal `flex-row` layouts inside vehicle cards caused text squashing, early truncation of number plates, and messy wrapping of unit labels (e.g., "kg") on smaller screens.
+
+**Decision**: Shifted vehicle cards (`FerryDeck.js`, `QueuePanel.js`) and headers (`RecommendationPanel.js`) to a strict vertical `flex-col` centered layout. Applied `whitespace-nowrap` to critical buttons and units, removed pill backgrounds from secondary text (like "Declared"), and used `font-mono` for all number plates to ensure clean, consistent data display.
